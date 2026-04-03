@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVISSE ASSISTANT - Multi IA Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glow { box-shadow: 0 0 40px -10px rgba(59, 130, 246, 0.3); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        html.light body { background: #f8fafc; color: #1e293b; }
+        html.light .glass { background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.1); }
+        .ai-label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; display: block; opacity: 0.6; }
+    </style>
+</head>
+
+<body class="bg-[#05060f] text-gray-100 h-screen flex flex-col selection:bg-blue-500/30 overflow-hidden">
+    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/15 rounded-full blur-[120px] pointer-events-none"></div>
+    <header class="h-16 flex items-center justify-between px-6 border-b border-white/5 glass z-50">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-blue-600 rounded-lg shadow-lg"><i data-lucide="zap" class="w-5 h-5 text-white"></i></div>
+            <h1 class="text-xl font-bold tracking-tight">JARVISSE <span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">ASSISTANT</span></h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="user-info" class="hidden flex items-center gap-4">
+                <div class="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+                    <i data-lucide="coins" class="w-4 h-4 text-yellow-400"></i>
+                    <span id="credits-count" class="text-sm font-semibold">0</span>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-white/5 rounded-full transition-all text-gray-400"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+            </div>
+            <button id="login-trigger" onclick="toggleAuthModal()" class="px-5 py-2 bg-blue-600 rounded-xl text-sm font-semibold">Se connecter</button>
+        </div>
+    </header>
+
+    <main id="chat-container" class="flex-1 overflow-y-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto space-y-10" id="messages-list">
+            <div id="welcome-msg" class="text-center py-20">
+                <div class="w-20 h-20 bg-white/5 rounded-3xl mx-auto flex items-center justify-center border border-white/10 mb-8"><i data-lucide="sparkles" class="w-10 h-10 text-blue-400"></i></div>
+                <h2 class="text-3xl font-bold mb-4 tracking-tight">L'IA selon vos désirs.</h2>
+                <p class="text-gray-400 max-w-lg mx-auto">Connectez-vous pour commencer à utiliser les modèles premium et le générateur d'images.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4 md:p-8 z-50">
+        <div class="max-w-4xl mx-auto relative group">
+            <div id="input-lock" class="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-10 rounded-[28px] flex items-center justify-center text-sm font-semibold text-blue-400 cursor-pointer" onclick="toggleAuthModal()">Connectez-vous pour utiliser l'IA</div>
+            <div class="flex items-center gap-2 mb-2">
+                <select id="model-select" class="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-400 outline-none hover:bg-white/10 transition-all cursor-pointer">
+                    <option value="multi">Multi-Modèles</option>
+                    <option value="gpt">GPT-4o mini</option>
+                    <option value="gemini">Gemini Pro</option>
+                    <option value="llama">Llama 3.3</option>
+                    <option value="image">🎨 Générateur d'images</option>
+                </select>
+            </div>
+            <div class="glass p-2 rounded-[28px] glow shadow-2xl relative border-white/5">
+                <div class="flex items-end gap-2 px-2">
+                    <textarea id="user-input" rows="1" class="flex-1 bg-transparent border-none focus:ring-0 py-4 px-4 text-gray-100 text-sm" placeholder="Qu'avez-vous en tête ?" onkeydown="handleKey(event)"></textarea>
+                    <button id="send-btn" onclick="sendMessage()" class="p-4 bg-blue-600 hover:bg-blue-500 rounded-2xl shadow-xl shadow-blue-950/40 active:scale-95 mb-2">
+                        <i data-lucide="send" class="w-5 h-5 text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div id="auth-modal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md p-8 rounded-3xl animate-in zoom-in fade-in duration-300">
+            <h3 class="text-2xl font-bold tracking-tight mb-8" id="modal-title">Connexion</h3>
+            <div class="space-y-4">
+                <input type="email" id="auth-email" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-sm" placeholder="Email">
+                <input type="password" id="auth-password" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-sm" placeholder="Mot de passe">
+                <button onclick="handleAuthSubmit()" id="auth-submit-btn" class="w-full bg-blue-600 py-3 rounded-xl font-bold">Lancer JARVISSE</button>
+                <p id="auth-toggle-text" class="text-center text-xs text-gray-500 cursor-pointer hover:text-blue-400" onclick="switchAuthMode()">Pas encore de compte ? S'inscrire</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let token = localStorage.getItem('token');
+        let isLogin = true;
+        const API_BASE = ""; // Laissée vide pour Vercel (URLs relatives)
+
+        if (token) { setupUserSession(token, localStorage.getItem('email'), localStorage.getItem('credits')); }
+
+        function toggleAuthModal() { document.getElementById('auth-modal').classList.toggle('hidden'); }
+        function switchAuthMode() { 
+            isLogin = !isLogin; 
+            document.getElementById('modal-title').innerText = isLogin ? 'Connexion' : 'Créer un compte';
+            document.getElementById('auth-submit-btn').innerText = isLogin ? 'Lancer JARVISSE' : 'Créer';
+        }
+
+        async function handleAuthSubmit() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const endpoint = isLogin ? '/login' : '/register';
+            try {
+                const res = await fetch(API_BASE + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                if (isLogin) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('email', data.email);
+                    localStorage.setItem('credits', data.credits);
+                    setupUserSession(data.token, data.email, data.credits);
+                    toggleAuthModal();
+                } else { alert("Compte prêt ! Connectez-vous."); switchAuthMode(); }
+            } catch (err) { alert(err.message); }
+        }
+
+        function setupUserSession(t, email, credits) {
+            token = t;
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('login-trigger').classList.add('hidden');
+            document.getElementById('input-lock').classList.add('hidden');
+            document.getElementById('credits-count').innerText = credits;
+        }
+
+        function logout() { localStorage.clear(); window.location.reload(); }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('user-input');
+            const message = messageInput.value.trim();
+            const model = document.getElementById('model-select').value;
+            if (!message || !token) return;
+
+            messageInput.value = '';
+            if (document.getElementById('welcome-msg')) document.getElementById('welcome-msg').remove();
+
+            const userMsg = document.createElement('div');
+            userMsg.className = 'flex justify-end';
+            userMsg.innerHTML = `<div class="bg-blue-600 px-6 py-3 rounded-2xl rounded-tr-none text-white text-sm shadow-xl">${message}</div>`;
+            document.getElementById('messages-list').appendChild(userMsg);
+
+            const aiWrapper = document.createElement('div');
+            aiWrapper.className = 'flex justify-start animate-in';
+            const loadingText = model === 'image' ? '🎨 Jarvis crée votre image...' : '● ● ●';
+            aiWrapper.innerHTML = `<div class="glass p-5 rounded-3xl max-w-2xl"><span class="ai-label text-pink-400">Jarvis Vision</span><div class="message-content text-sm text-gray-300 animate-pulse">${loadingText}</div></div>`;
+            document.getElementById('messages-list').appendChild(aiWrapper);
+            scrollToBottom();
+
+            try {
+                const res = await fetch(API_BASE + "/chat", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ message, model })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                const cont = aiWrapper.querySelector('.message-content');
+                cont.classList.remove('animate-pulse');
+                
+                if (data.image) {
+                    cont.innerHTML = `<img src="${data.image}" class="rounded-xl w-full h-auto border-2 border-white/10 shadow-2xl mt-2"><a href="${data.image}" target="_blank" class="block mt-2 text-center text-xs text-blue-400 font-bold">Ouvrir en grand ↗</a>`;
+                } else if (model === 'multi') {
+                    cont.innerHTML = `GPT: ${marked.parse(data.gpt)}<hr class="my-2 opacity-10">Gemini: ${marked.parse(data.gemini)}<hr class="my-2 opacity-10">Claude: ${marked.parse(data.claude)}`;
+                } else {
+                    cont.innerHTML = marked.parse(data[model] || "Aucun contenu reçu.");
+                }
+
+                if (data.remainingCredits !== undefined) {
+                    document.getElementById('credits-count').innerText = data.remainingCredits;
+                    localStorage.setItem('credits', data.remainingCredits);
+                }
+            } catch (err) {
+                console.error(err);
+                aiWrapper.querySelector('.message-content').innerHTML = `<span class="text-red-400">Désolé Monsieur, un obstacle technique empêche la réponse: ${err.message}</span>`;
+            }
+            scrollToBottom();
+        }
+
+        function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+        function scrollToBottom() { document.getElementById('chat-container').scrollTo({ top: document.getElementById('chat-container').scrollHeight, behavior: 'smooth' }); }
+    </script>
+</body>
+</html>
