@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Multi-IA Backend",
-  "main": "server.js",
+  "main": "server/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js"
   },
   "dependencies": {
     "axios": "^1.6.0",

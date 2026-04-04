@@ -10,14 +10,14 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(login|register|chat|create-checkout)",
-      "dest": "server/server.js"
+      "source": "/(login|register|chat|create-checkout)",
+      "destination": "server/server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "public/$1"
+      "source": "/(.*)",
+      "destination": "public/$1"
     }
   ]
 }
